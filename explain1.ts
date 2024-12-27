@@ -84,7 +84,7 @@ function compareExplain(a, b) : string
         if (Math.abs(val) < SMALL) continue;
         if(val < 0)
         {
-            res += `${KEY_EXPLAIN[i]} is worse ${val}, `;
+            res += `${KEY_EXPLAIN[i]} is worse ${val.toFixed(3)}, `;
         }
         else
         {
@@ -100,3 +100,5 @@ function compareExplain(a, b) : string
 
 // Show the user the reason why explain1 is better than explain2.
 console.log(compareExplain(explain1, explain2));
+// When you get it backwards, it tells you why explain2 is worse than explain1.
+console.log(compareExplain(explain2, explain1));
