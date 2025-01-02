@@ -75,11 +75,9 @@ const KEYS: ExplainProperties[] = ['surface', 'surfaceLeft', 'avgHeight', 'lineC
 const KEY_EXPLAIN = ['surface', 'surface left', 'average height', 'line clear', 'hole', 'hole weight', 'guaranteed burns', 'likely burns', 'inaccessible left', 'inaccessible right', 'covered well', 'high col 9', 'tetris ready', 'built out left', 'unable to burn'];
 
 
-const translations = {'tetrisReady':"This stack is tetris ready.", 'avgHeight':"The average height is lower, while the other risks topout.", 'surfaceLeft':"Your left is stronger.", 'lineClear':"This move scored points.", 'hole':"This avoids putting holes in the stack that must be uncovered.", 'holeWeight':"This puts less weight on holes.", 'guaranteedBurns':"This placement avoids burns.", 'likelyBurns':"This placement avoids burns that might not be forced.", 'inaccessibleLeft':"Your left is accessible.", 'inaccessibleRight':"Your right is accessible.", 'coveredWell':"This avoids covering your well.", 'highCol9':"Your column 9 is lower.", 'unableToBurn':"This stack makes it possible to burn.", 'builtOutLeft':'This has a better built out left.'};
+const translations = {'tetrisReady':"This stack is tetris ready.", 'avgHeight':"The average height is lower, while the other risks topout.", 'surfaceLeft':"Your left is stronger.", 'lineClear':"This move avoided a burn.", 'hole':"This avoids putting holes in the stack that must be uncovered.", 'holeWeight':"This puts less weight on holes.", 'guaranteedBurns':"This placement avoids burns.", 'likelyBurns':"This placement avoids burns that might not be forced.", 'inaccessibleLeft':"Your left is accessible.", 'inaccessibleRight':"Your right is accessible.", 'coveredWell':"This avoids covering your well.", 'highCol9':"Your column 9 is lower.", 'unableToBurn':"This stack makes it possible to burn.", 'builtOutLeft':'This has a better built out left.', 'surface':''};
 
-/*
-const negativeTranslations = {'tetrisReady':"This stack is not tetris ready.", 'avgHeight':"Your average height is too high causing this board to be prone to topout.", 'surfaceLeft':"Your left is weaker.", 'lineClear':"This move scored fewer points.", 'hole':"This puts holes in the stack that must be uncovered.", 'holeWeight':"This puts more weight on holes.", 'guaranteedBurns':"This placement requires burns to get a tetris.", 'likelyBurns':"This placement will likely result in burns.", 'inaccessibleLeft':"Your left is inaccessible.", 'inaccessibleRight':"Your right is inaccessible.", 'coveredWell':"This placement covers your well.", 'highCol9':"Your column 9 is too high.", 'unableToBurn':"This stack makes difficult to burn.", 'builtOutLeft':'Your left is weaker.'}
-*/
+const negativeTranslations = {'tetrisReady':"This stack is not tetris ready.", 'avgHeight':"Your average height is too high causing this board to be prone to topout.", 'surfaceLeft':"Your left is weaker.", 'lineClear':"This is a burn costing pace.", 'hole':"This puts holes in the stack that must be uncovered.", 'holeWeight':"This puts more weight on holes.", 'guaranteedBurns':"This placement requires burns to get a tetris.", 'likelyBurns':"This placement will likely result in burns.", 'inaccessibleLeft':"Your left is inaccessible.", 'inaccessibleRight':"Your right is inaccessible.", 'coveredWell':"This placement covers your well.", 'highCol9':"Your column 9 is too high.", 'unableToBurn':"This stack makes difficult to burn.", 'builtOutLeft':'Your left is weaker.'}
 
 const SMALL = 0.1;
 
@@ -120,15 +118,57 @@ function is_are(value: any[])
     return 'are';
 }
 
+/*
+ *  Checks for L dependency using the 537 tool. A surface is L dependent when:
+ *  there is a drop of 2 and then an increase of 3 or more.
+ */
 function is_L_dependent(surface: number[]): boolean
 {
-    // TODO port from Python
+    // TODO test
+    let L_dependent = [];
+    for (var col = 0; col < 9; col++) {
+        if (col == WELL_COLUMN) continue;
+        const diff = surface[col] - surface[col+1];
+        if (diff == 2) L_dependent.push(col);
+    }
+    for (var col of L_dependent) {
+        const next_col = col + 1;
+        if (next_col >= 9) continue;
+        const diff_next = surface[next_col] - surface[next_col+1];
+        if (diff_next < -2) {
+            return true;
+        }
+    }
     return false;
 }
 
+/*
+ * Checks for J dependency using the 735 tool. A surface is J dependent when:
+ *  there is a drop of 3 or more.
+ *  and
+ *  then an increase of 2.
+ */
 function is_J_dependent(surface: number[]): boolean
 {
-    // TODO copy above and then make the necessary changes
+    // TODO test
+    let J_dependent = [];
+    for (var col = 0; col < 9; col++) {
+        if (col == WELL_COLUMN) continue;
+        const diff = surface[col] - surface[col+1];
+        if (col == 0) {
+            // Left J dependency
+            if (diff == -2) return true;
+        }
+        if (diff == 2) J_dependent.push(col);
+    }
+    for (var col of J_dependent) {
+        const prev_col = col - 1;
+        if (prev_col < 0) continue;
+        const diff_next = surface[prev_col] - surface[prev_col+1]
+        if (diff_next < -2) {
+            return true;
+        }
+    }
     return false;
 }
 
@@ -201,7 +241,7 @@ function surface_logic(a: EvalExplain, b: EvalExplain, board_a: string|null=null
 
     let worse_str = '';
     if (better.length == 1) {
-        if (worse) {
+        if (worse.length) {
             const worse_cols = worse.join('');
             worse_str = `but Col ${worse_cols} ${is_are(worse)} worse`;
         }
@@ -212,7 +252,7 @@ function surface_logic(a: EvalExplain, b: EvalExplain, board_a: string|null=null
         return `The stack is much better ${better.join('')}`;
     }
     //# 2-3 columns are better.
-    if (worse) {
+    if (worse.length) {
         worse_str = `but Col ${worse.join('')} ${is_are(worse)} worse`;
     }
     if (better.length >= 2) {
@@ -258,10 +298,10 @@ function compareExplain(a: EvalExplain, b: EvalExplain, board_a: string|null=nul
         {
             if (val == most_important) {
                 res += `${KEY_EXPLAIN[i]} is the most important ${val.toFixed(3)}, `
-                if (translations[KEYS[i]] !== undefined) {
-                    res2 = translations[KEYS[i]];
-                } else if (KEYS[i] == 'surface') {
+                if (KEYS[i] == 'surface') {
                     res2 = surface_logic(a, b, board_a, board_b);
+                } else if (translations[KEYS[i]] !== undefined) {
+                    res2 = translations[KEYS[i]];
                 }
             } else {
                 res += `${KEY_EXPLAIN[i]} is better ${val.toFixed(3)}, `
@@ -269,7 +309,7 @@ function compareExplain(a: EvalExplain, b: EvalExplain, board_a: string|null=nul
         }
     }
     if (short && res2) return res2;
-    if (res2) return res2 + ' ' + res.substring(0, res.length-2)
+    if (res2) return res2 + '\n' + res.substring(0, res.length-2)
     //# strip the final comma space
     return res.substring(0, res.length-2);
 }
