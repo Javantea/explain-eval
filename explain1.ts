@@ -265,7 +265,11 @@ function surface_logic(a: EvalExplain, b: EvalExplain, board_a: string|null=null
             //# handle 16 and 17
             const first_one = dbetter.indexOf(1);
             //print('first one debug', first_one)
-            return `Better parity in columns ${better[first_one]+1} and ${better[first_one]+2}`;
+            const dcost = cost_b[better[first_one]] - cost_a[better[first_one]];
+            if (dcost == 1) {
+                return `Better parity in columns ${better[first_one]+1} and ${better[first_one]+2}`;
+            }
+            return `Better shape in columns ${better[first_one]+1} and ${better[first_one]+2}`;
         } else {
             return `Better parity in columns ${better[0]+1} and ${better[0]+2}`;
         }

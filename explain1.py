@@ -156,6 +156,31 @@ board17 = to_board("""
  11 1
 111111111""")
 
+# puzzle 83 solution
+board18 = to_board("""
+1
+11
+11  11
+1111111
+1111111
+11111111
+111111111
+111111111
+111111111""")
+
+# puzzle 83 2nd best solution
+board19 = to_board("""
+1     1
+11   11
+11  111
+1111111
+1111111
+11111111
+11111111
+11111111
+11111111
+111111111""")
+
 KEYS = ['surface', 'surfaceLeft', 'avgHeight', 'lineClear', 'hole', 'holeWeight', 'guaranteedBurns', 'likelyBurns', 'inaccessibleLeft', 'inaccessibleRight', 'coveredWell', 'highCol9', 'tetrisReady', 'builtOutLeft', 'unableToBurn']
 
 KEY_EXPLAIN = ['surface', 'surface left', 'average height', 'line clear', 'hole', 'hole weight', 'guaranteed burns', 'likely burns', 'inaccessible left', 'inaccessible right', 'covered well', 'high col 9', 'tetris ready', 'built out left', 'unable to burn']
@@ -368,7 +393,12 @@ def surface_logic(a, b, board_a, board_b):
             # handle 16 and 17
             first_one = dbetter.index(1)
             print('first one debug', first_one)
-            return 'Better parity in columns {0} and {1}'.format(better[first_one]+1, better[first_one]+2)
+            #print('db', dbetter)
+            print('cost', cost_a[better[first_one]], cost_b[better[first_one]])
+            dcost = cost_b[better[first_one]] - cost_a[better[first_one]]
+            if dcost == 1:
+                return 'Better parity in columns {0} and {1}'.format(better[first_one]+1, better[first_one]+2)
+            return 'Better shape in columns {0} and {1}'.format(better[first_one]+1, better[first_one]+2)
         else:
             return 'Better parity in columns {0} and {1}'.format(better[0]+1, better[0]+2)
     return 'Col {0} {1} better {2}'.format(''.join(map(str, better)), is_are(better), worse_str)
@@ -433,6 +463,8 @@ def main():
     print(surface_logic({}, {}, board14, board15))
     # 16 has better parity than 17 otherwise the same.
     print(surface_logic({}, {}, board16, board17))
+    # 18 has better stack than 19 otherwise the same.
+    print(surface_logic({}, {}, board18, board19))
 
 if __name__ == '__main__':
     main()
