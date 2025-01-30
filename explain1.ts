@@ -172,6 +172,31 @@ function is_J_dependent(surface: number[]): boolean
     return false;
 }
 
+/*
+ * parity(board)
+ * Very mathematical solution to counting a checkerboard over a 10 wide by x high board.
+ * colpos determines where we are in the columns
+ */
+function parity(board: string): number
+{
+    var result_a:number = 0;
+    var result_b:number = 0;
+    // NOTE: Board must be 10 columns and 20 rows or else you'll get errors.
+    // If your board is odd width you will not get a correct answer.
+    var left:number = 0;
+    var colpos:number = 0;
+    for (let i = 0; i < board.length; i += 2) {
+        result_a += (board[i ^ left] == '0' ? 0 : 1);
+        result_b += (board[i ^ left ^ 1] == '0' ? 0 : 1);
+        colpos += 2;
+        if(colpos >= 10) {
+            left ^= 1; // swap for the next row.
+            colpos = 0;
+        }
+    }
+    return Math.abs(result_a - result_b);
+}
+
 function surface_logic(a: EvalExplain, b: EvalExplain, board_a: string|null=null, board_b: string|null=null, short: boolean=false) : string
 {
     if (board_b == null || board_a == null)
@@ -205,7 +230,12 @@ function surface_logic(a: EvalExplain, b: EvalExplain, board_a: string|null=null
     if (cost_b.indexOf(0) == -1) {
         //# There is nowhere to place an O piece (see board11).
         if (cost_a.indexOf(0) != -1) {
-            return "Better parity";
+            var adjective = 'parity';
+            if (parity(board_a) == parity(board_b)) {
+                // TODO: more information on what better parity is. Is it < >?
+                adjective = 'shape';
+            }
+            return `Better ${adjective}`;
         }
     }
     if (Math.max(...cost_b) > Math.max(...cost_a) + 4) {
@@ -240,20 +270,21 @@ function surface_logic(a: EvalExplain, b: EvalExplain, board_a: string|null=null
     console.log(worse);
 
     let worse_str = '';
+    const better_add1 = better.map((col) => col + 1).join(', ');
     if (better.length == 1) {
         if (worse.length) {
             const worse_cols = worse.join('');
-            worse_str = `but Col ${worse_cols} ${is_are(worse)} worse`;
+            worse_str = `but Column ${worse_cols} ${is_are(worse)} worse`;
         }
-        return `Col ${better.join('')} ${is_are(better)} better ${worse_str}`;
+        return `Column ${better_add1} ${is_are(better)} better ${worse_str}`;
     }
     //# Multiple columns are better.
     if (better.length > 4) {
-        return `The stack is much better ${better.join('')}`;
+        return `The stack is much better ${better_add1}`;
     }
     //# 2-3 columns are better.
     if (worse.length) {
-        worse_str = `but Col ${worse.join('')} ${is_are(worse)} worse`;
+        worse_str = `but Column ${worse.join('')} ${is_are(worse)} worse`;
     }
     if (better.length >= 2) {
         //# Improved parity by putting 2 minos together. (see board12 and board13, 14 and 15)
@@ -267,14 +298,28 @@ function surface_logic(a: EvalExplain, b: EvalExplain, board_a: string|null=null
             //print('first one debug', first_one)
             const dcost = cost_b[better[first_one]] - cost_a[better[first_one]];
             if (dcost == 1) {
-                return `Better parity in columns ${better[first_one]+1} and ${better[first_one]+2}`;
+                var adjective = 'parity';
+                if (parity(board_a) == parity(board_b)) {
+                    // TODO: more information on what better parity is. Is it < >?
+                    adjective = 'shape';
+                }
+                return `Better ${adjective} in columns ${better[first_one]+1} and ${better[first_one]+2}`;
             }
             return `Better shape in columns ${better[first_one]+1} and ${better[first_one]+2}`;
         } else {
-            return `Better parity in columns ${better[0]+1} and ${better[0]+2}`;
+            var adjective = 'parity';
+            if (parity(board_a) == parity(board_b)) {
+                // TODO: more information on what better parity is. Is it < >?
+                adjective = 'shape';
+            }
+            return `Better ${adjective} in columns ${better[0]+1} and ${better[0]+2}`;
         }
     }
-    return `Col ${better.join('')} ${is_are(better)} better ${worse_str}`;
+    if (better.length == 0) {
+        // TODO Puzzle 231 and so on.
+        return 'StackRabbit 2.0 deep search average score is better';
+    }
+    return `Column ${better_add1} ${is_are(better)} better ${worse_str}`;
 }
 
 /*
