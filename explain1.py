@@ -297,6 +297,36 @@ def is_J_dependent(surface):
 assert(is_J_dependent(get_surface_array(board8)))
 assert(is_J_dependent(get_surface_array(board9)))
 
+
+def parity(board):
+    """
+    Very mathematical solution to counting a checkerboard over a 10 wide by x high board.
+    colpos determines where we are in the columns
+    """
+    result_a = 0
+    result_b = 0
+    out = []
+    #// NOTE: Board must be 10 columns else you'll get errors.
+    #// If your board is odd width you will not get a correct answer.
+    left = 0
+    colpos = 0
+    for i in range(0, len(board), 2):
+        result_a += (board[i ^ left] != '0' and 1 or 0)
+        result_b += (board[i ^ left ^ 1] != '0' and 1 or 0)
+        #print(i, 'ra rb', result_a, result_b)
+        colpos += 2
+        if colpos >= 10:
+            left ^= 1 #// swap for the next row.
+            colpos = 0
+    return abs(result_a - result_b)
+
+# TODO: More tests
+assert(parity(board12) < parity(board13))
+#print('parity board12', parity(board12))
+#print('parity board13', parity(board13))
+#print('parity board12', pairty(board12))
+#print('parity board12', pairty(board12))
+
 def surface_logic(a, b, board_a, board_b):
     """
     Surface is an important issue that we can say a lot about.
@@ -353,7 +383,10 @@ def surface_logic(a, b, board_a, board_b):
     if 0 not in cost_b:
         # There is nowhere to place an O piece (see board11).
         if 0 in cost_a:
-            return "Better parity"
+            adjective = 'parity'
+            if parity(board_a) == parity(board_b):
+                adjective = 'shape'
+            return "Better {2} ({0}) ({1})".format(parity(board_a), parity(board_b), adjective)
     if max(cost_b) > max(cost_a) + 4:
         # TODO: Test
         return 'This avoids a spire'
@@ -397,10 +430,16 @@ def surface_logic(a, b, board_a, board_b):
             print('cost', cost_a[better[first_one]], cost_b[better[first_one]])
             dcost = cost_b[better[first_one]] - cost_a[better[first_one]]
             if dcost == 1:
-                return 'Better parity in columns {0} and {1}'.format(better[first_one]+1, better[first_one]+2)
+                adjective = 'parity'
+                if parity(board_a) == parity(board_b):
+                    adjective = 'shape'
+                return 'Better {4} in columns {0} and {1} ({2}) ({3})'.format(better[first_one]+1, better[first_one]+2, parity(board_a), parity(board_b), adjective)
             return 'Better shape in columns {0} and {1}'.format(better[first_one]+1, better[first_one]+2)
         else:
-            return 'Better parity in columns {0} and {1}'.format(better[0]+1, better[0]+2)
+            adjective = 'parity'
+            if parity(board_a) == parity(board_b):
+                adjective = 'shape'
+            return 'Better {4} in columns {0} and {1} ({2}) ({3})'.format(better[0]+1, better[0]+2, parity(board_a), parity(board_b), adjective)
     return 'Col {0} {1} better {2}'.format(''.join(map(str, better)), is_are(better), worse_str)
 
 def compare(a, b, board_a=None, board_b=None, short=False):
